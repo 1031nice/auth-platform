@@ -109,14 +109,24 @@ java -jar build/libs/auth-server-0.0.1-SNAPSHOT.jar
 
 - 애플리케이션: http://localhost:8080
 - H2 Console: http://localhost:8080/h2-console
-- Health Check: http://localhost:8080/api/auth/health
+- Health Check: http://localhost:8080/api/v1/auth/health
+
+### 4. 코드 포맷팅
+
+```bash
+# Apply code formatting automatically
+./gradlew spotlessApply
+
+# Check if code is properly formatted
+./gradlew spotlessCheck
+```
 
 ## API 엔드포인트
 
 ### 회원가입
 
 ```bash
-POST /api/auth/signup
+POST /api/v1/auth/signup
 Content-Type: application/json
 
 {
@@ -141,7 +151,7 @@ Content-Type: application/json
 ### 로그인
 
 ```bash
-POST /api/auth/login
+POST /api/v1/auth/login
 Content-Type: application/json
 
 {
