@@ -1,8 +1,7 @@
 package com.auth.server.domain.entity;
 
 public enum Role {
-    ROLE_USER,
-    ROLE_ADMIN,
-    ROLE_MODERATOR
+  ROLE_USER,
+  ROLE_ADMIN,
+  ROLE_MODERATOR
 }
-

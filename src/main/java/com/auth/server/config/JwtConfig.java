@@ -8,10 +8,9 @@ import org.springframework.context.annotation.Configuration;
 @Getter
 public class JwtConfig {
 
-    @Value("${jwt.secret}")
-    private String secret;
+  @Value("${jwt.secret}")
+  private String secret;
 
-    @Value("${jwt.expiration}")
-    private Long expiration;
+  @Value("${jwt.expiration}")
+  private Long expiration;
 }
-
