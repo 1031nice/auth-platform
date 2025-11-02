@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "AuthServerApplication",
+            "request": "launch",
+            "mainClass": "com.auth.server.AuthServerApplication",
+            "projectName": "auth-server",
+            "args": ""
+        }
+    ]
+}
+

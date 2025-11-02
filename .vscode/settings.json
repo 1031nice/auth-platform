@@ -1,0 +1,19 @@
+{
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-21",
+            "path": "/Users/east/Library/Java/JavaVirtualMachines/temurin-21.0.8/Contents/Home",
+            "default": true
+        }
+    ],
+    "java.jdt.ls.java.home": "/Users/east/Library/Java/JavaVirtualMachines/temurin-21.0.8/Contents/Home",
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.configuration.cleanWorkspace": false,
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.import.gradle.enabled": true,
+    "java.import.gradle.wrapper.enabled": true,
+    "java.project.sourcePaths": [],
+    "java.project.outputPath": "build/classes",
+    "java.project.referencedLibraries": []
+}
+

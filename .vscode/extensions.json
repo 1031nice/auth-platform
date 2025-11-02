@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "vscjava.vscode-java-pack",
+        "vmware.vscode-spring-boot",
+        "vmware.vscode-spring-boot-dashboard",
+        "pivotal.vscode-spring-boot",
+        "k--kato.intellij-idea-keybindings"
+    ]
+}
+
