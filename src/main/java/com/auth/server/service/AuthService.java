@@ -38,15 +38,19 @@ public class AuthService {
             .findByUsername(request.getUsername())
             .orElseThrow(() -> new RuntimeException("User not found"));
 
-    String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId());
-    String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername(), user.getId());
+    List<String> roles = extractRoles(user);
+    String accessToken =
+        jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId(), roles);
+    String refreshToken =
+        jwtTokenProvider.generateRefreshToken(user.getUsername(), user.getId(), roles);
 
-    return buildAuthResponse(user, accessToken, refreshToken);
+    return buildAuthResponse(user, accessToken, refreshToken, roles);
   }
 
   @Transactional(readOnly = true)
   public AuthResponse refreshToken(String refreshToken) {
-    if (!jwtTokenProvider.validateToken(refreshToken) || !jwtTokenProvider.isRefreshToken(refreshToken)) {
+    if (!jwtTokenProvider.validateToken(refreshToken)
+        || !jwtTokenProvider.isRefreshToken(refreshToken)) {
       throw new RuntimeException("Invalid refresh token");
     }
 
@@ -57,15 +61,21 @@ public class AuthService {
             .findByUsername(username)
             .orElseThrow(() -> new RuntimeException("User not found"));
 
-    String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId());
-    String newRefreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername(), user.getId());
+    List<String> scopes = jwtTokenProvider.getScopes(refreshToken);
+    if (scopes == null || scopes.isEmpty()) {
+      scopes = extractRoles(user);
+    }
 
-    return buildAuthResponse(user, accessToken, newRefreshToken);
+    String accessToken =
+        jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId(), scopes);
+    String newRefreshToken =
+        jwtTokenProvider.generateRefreshToken(user.getUsername(), user.getId(), scopes);
+
+    return buildAuthResponse(user, accessToken, newRefreshToken, scopes);
   }
 
-  private AuthResponse buildAuthResponse(User user, String accessToken, String refreshToken) {
-    List<String> roles = user.getRoles().stream().map(Enum::name).collect(Collectors.toList());
-
+  private AuthResponse buildAuthResponse(
+      User user, String accessToken, String refreshToken, List<String> roles) {
     return AuthResponse.builder()
         .accessToken(accessToken)
         .refreshToken(refreshToken)
@@ -74,5 +84,9 @@ public class AuthService {
         .email(user.getEmail())
         .roles(roles)
         .build();
+  }
+
+  private List<String> extractRoles(User user) {
+    return user.getRoles().stream().map(Enum::name).collect(Collectors.toList());
   }
 }
