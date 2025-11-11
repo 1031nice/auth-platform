@@ -2,6 +2,7 @@ package com.auth.server.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -17,6 +18,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
   @Bean
+  @Order(2)
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http.csrf(AbstractHttpConfigurer::disable)
         .sessionManagement(
@@ -24,6 +26,12 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers("/api/v1/auth/**")
+                    .permitAll()
+                    .requestMatchers("/api/v1/oauth2/clients/**")
+                    .authenticated() // Client management requires authentication
+                    .requestMatchers("/oauth2/**")
+                    .permitAll()
+                    .requestMatchers("/.well-known/**")
                     .permitAll()
                     .requestMatchers("/h2-console/**")
                     .permitAll()
