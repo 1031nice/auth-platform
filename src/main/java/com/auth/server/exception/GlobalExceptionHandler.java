@@ -37,6 +37,30 @@ public class GlobalExceptionHandler {
     return ResponseEntity.badRequest().body(errors);
   }
 
+  @ExceptionHandler(TokenReuseException.class)
+  public ResponseEntity<Map<String, Object>> handleTokenReuseException(TokenReuseException ex) {
+    log.warn("Token reuse detected: {}", ex.getMessage());
+
+    Map<String, Object> error = new HashMap<>();
+    error.put("status", HttpStatus.UNAUTHORIZED.value());
+    error.put("message", ex.getMessage());
+    error.put("error", "TOKEN_REUSE_DETECTED");
+
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+  }
+
+  @ExceptionHandler(InvalidTokenException.class)
+  public ResponseEntity<Map<String, Object>> handleInvalidTokenException(InvalidTokenException ex) {
+    log.warn("Invalid token: {}", ex.getMessage());
+
+    Map<String, Object> error = new HashMap<>();
+    error.put("status", HttpStatus.UNAUTHORIZED.value());
+    error.put("message", ex.getMessage());
+    error.put("error", "INVALID_TOKEN");
+
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+  }
+
   @ExceptionHandler(RuntimeException.class)
   public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
     log.error("RuntimeException: {}", ex.getMessage());
