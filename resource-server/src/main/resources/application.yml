@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: resource-server
+
+  datasource:
+    url: jdbc:h2:mem:resourcedb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+server:
+  port: 8082
+
+# OAuth2 Resource Server 설정
+# OAuth2 Authorization Server의 JWK Set 엔드포인트를 참조
+spring.security.oauth2.resourceserver.jwt:
+  issuer-uri: http://localhost:8081
+  jwk-set-uri: http://localhost:8081/oauth2/jwks
+
+rate-limit:
+  redis:
+    enabled: true
+  default:
+    capacity: 100
+    refill-rate: 100
+    refill-period-seconds: 60
+  endpoints:
+    userinfo:
+      capacity: 100
+      refill-rate: 100
+      refill-period-seconds: 60
+
+logging:
+  level:
+    com.auth: DEBUG
+    org.springframework.security: DEBUG
+

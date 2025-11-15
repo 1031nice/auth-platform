@@ -1,2 +1,4 @@
-rootProject.name = 'auth-server'
+rootProject.name = 'auth-platform'
 
+include 'oauth2-server'
+include 'resource-server'

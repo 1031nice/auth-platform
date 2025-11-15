@@ -1,6 +1,13 @@
-# Auth Server
+# Auth Platform
 
-Spring Boot 기반 JWT 인증 서버.
+인증 및 인가 플랫폼 프로젝트. OAuth2/OIDC 표준을 준수하는 인증 및 인가 서버를 제공하는 멀티모듈 프로젝트입니다.
+
+## 프로젝트 구조
+
+이 프로젝트는 다음 두 개의 서브모듈로 구성됩니다:
+
+- **oauth2-server**: OAuth2 Authorization Server (포트: 8081) - 사용자 인증 및 토큰 발급
+- **resource-server**: OAuth2 Resource Server (포트: 8082) - 보호된 리소스 제공
 
 ## 기술 스택
 - Java 21
@@ -13,15 +20,23 @@ Spring Boot 기반 JWT 인증 서버.
 - Bucket4j (Rate Limiting 라이브러리)
 
 ## 현재 제공 기능
-- 로그인: `username`/`password`로 인증 후 JWT 발급
-- JWT 토큰 발급·검증: HS512 서명, 만료 시간 설정
-- 리프레시 토큰 발급 및 갱신
-- 역할 기반 접근 제어: 사용자 권한(RBAC) 적용
-- 비밀번호 암호화: BCrypt 이용
-- 전역 예외 처리: 유효성 검증 및 런타임 예외 응답 관리
-- 헬스 체크: `/api/v1/auth/health`
-- **OAuth2 Authorization Server**: 표준 OAuth2 엔드포인트 제공
+
+### oauth2-server (OAuth2 Authorization Server)
+- **사용자 인증**: 폼 기반 로그인 (`/login`)
+- **OAuth2 Authorization Server**: 표준 OAuth2/OIDC 엔드포인트 제공
 - **OAuth2 Client 관리**: OAuth2 클라이언트 등록 및 관리 API
+- **지원하는 Grant Types**: 
+  - `authorization_code`: 인증 코드 플로우 (웹 애플리케이션용)
+  - `client_credentials`: 클라이언트 자격 증명 플로우 (서버 간 통신용)
+  - `refresh_token`: 리프레시 토큰 플로우 (토큰 갱신용)
+- **JWK Set 엔드포인트**: `/oauth2/jwks` - Resource Server에서 토큰 검증에 사용
+- **역할 기반 접근 제어**: 사용자 권한(RBAC) 적용
+- **비밀번호 암호화**: BCrypt 이용
+
+### resource-server (OAuth2 리소스 서버)
+- **OIDC UserInfo 엔드포인트**: `/userinfo` - OAuth2 토큰으로 사용자 정보 제공
+- **JWT 토큰 검증**: OAuth2 Authorization Server에서 발급한 토큰 검증
+- **보호된 리소스 제공**: OAuth2 토큰 기반 인증이 필요한 리소스 제공
 
 ## 실행 방법
 
@@ -35,9 +50,20 @@ docker-compose up -d redis
 ```
 
 ### 2. 애플리케이션 실행
+
+#### oauth2-server 실행
+```bash
+./gradlew :oauth2-server:bootRun
+```
+
+#### resource-server 실행
+```bash
+./gradlew :resource-server:bootRun
+```
+
+#### 전체 빌드
 ```bash
 ./gradlew build
-./gradlew bootRun
 ```
 
 ### Redis 중지
@@ -45,54 +71,15 @@ docker-compose up -d redis
 docker-compose down
 ```
 
-### 주요 엔드포인트
-#### 로그인
-`POST /api/v1/auth/login`
-```json
-{
-  "username": "demo",
-  "password": "password"
-}
-```
+## 주요 엔드포인트
 
-응답:
-```json
-{
-  "accessToken": "eyJhbGciOiJIUzUxMiJ9...",
-  "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
-  "tokenType": "Bearer",
-  "id": 1,
-  "username": "demo",
-  "email": "demo@example.com",
-  "roles": ["ROLE_USER"]
-}
-```
+### oauth2-server 엔드포인트
 
-#### 헬스 체크
-`GET /api/v1/auth/health`
+#### 사용자 로그인
+OAuth2 Authorization Code Flow를 사용할 때 사용자가 로그인하는 페이지입니다.
 
-#### 토큰 갱신
-`POST /api/v1/auth/refresh`
-```json
-{
-  "refreshToken": "eyJhbGciOiJIUzUxMiJ9..."
-}
-```
-
-응답:
-```json
-{
-  "accessToken": "eyJhbGciOiJIUzUxMiJ9...",
-  "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
-  "tokenType": "Bearer",
-  "id": 1,
-  "username": "demo",
-  "email": "demo@example.com",
-  "roles": ["ROLE_USER"]
-}
-```
-
-### OAuth2 엔드포인트
+`GET /login` - 로그인 페이지
+`POST /login` - 로그인 처리
 
 #### OAuth2 Client 등록
 OAuth2를 사용하기 전에 클라이언트를 등록해야 합니다.
@@ -175,11 +162,24 @@ grant_type=refresh_token&refresh_token={refresh_token}
 - `client_credentials`: 클라이언트 자격 증명 플로우 (서버 간 통신용)
 - `refresh_token`: 리프레시 토큰 플로우 (토큰 갱신용)
 
-### JWT 만료 설정
-`application.yml`에서 액세스/리프레시 토큰 만료 시간을 조정할 수 있습니다.
-```yaml
-jwt:
-  secret: your-secret-key
-  expiration: 86400000        # access token (24h)
-  refresh-expiration: 604800000 # refresh token (7d)
+### resource-server 엔드포인트
+
+#### OIDC UserInfo
+OAuth2 Authorization Server에서 발급한 액세스 토큰을 사용하여 사용자 정보를 조회합니다.
+
 ```
+GET /userinfo
+Authorization: Bearer {access_token}
+```
+
+응답:
+```json
+{
+  "sub": "1",
+  "name": "demo",
+  "email": "demo@example.com",
+  "email_verified": true,
+  "preferred_username": "demo"
+}
+```
+
