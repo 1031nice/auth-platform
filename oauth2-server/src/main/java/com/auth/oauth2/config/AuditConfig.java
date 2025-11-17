@@ -3,9 +3,11 @@ package com.auth.oauth2.config;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
-import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.lang.Nullable;
 
@@ -14,8 +16,10 @@ import org.springframework.lang.Nullable;
 public class AuditConfig {
 
   @Bean
-  public OAuth2AuthorizationService oauth2AuthorizationService() {
-    OAuth2AuthorizationService delegate = new InMemoryOAuth2AuthorizationService();
+  public OAuth2AuthorizationService oauth2AuthorizationService(
+      JdbcTemplate jdbcTemplate, RegisteredClientRepository registeredClientRepository) {
+    OAuth2AuthorizationService delegate =
+        new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
     return new OAuth2AuthorizationService() {
       @Override
       public void save(OAuth2Authorization authorization) {
