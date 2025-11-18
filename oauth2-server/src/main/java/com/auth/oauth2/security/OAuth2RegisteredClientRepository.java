@@ -76,7 +76,7 @@ public class OAuth2RegisteredClientRepository implements RegisteredClientReposit
             TokenSettings.builder()
                 .accessTokenTimeToLive(Duration.ofHours(24)) // 24 hours
                 .refreshTokenTimeToLive(Duration.ofDays(7)) // 7 days
-                .reuseRefreshTokens(true)
+                .reuseRefreshTokens(false) // Refresh Token Rotation (RTR) enabled
                 .build())
         .build();
   }

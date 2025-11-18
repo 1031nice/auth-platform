@@ -32,6 +32,10 @@
 - **JWK Set 엔드포인트**: `/oauth2/jwks` - Resource Server에서 토큰 검증에 사용
 - **역할 기반 접근 제어**: 사용자 권한(RBAC) 적용
 - **비밀번호 암호화**: BCrypt 이용
+- **Refresh Token Rotation (RTR)**: Refresh Token 사용 시 자동 회전 및 재사용 감지
+- **PKCE (Proof Key for Code Exchange)**: 공개 클라이언트 보안 강화
+- **Audit Logging**: 인증 및 토큰 발급 이벤트 로깅
+- **Rate Limiting**: Redis 기반 요청 제한
 
 ### resource-server (OAuth2 리소스 서버)
 - **OIDC UserInfo 엔드포인트**: `/userinfo` - OAuth2 토큰으로 사용자 정보 제공
