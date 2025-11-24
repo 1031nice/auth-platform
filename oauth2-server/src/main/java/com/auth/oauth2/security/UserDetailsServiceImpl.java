@@ -22,9 +22,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
   @Override
   @Transactional(readOnly = true)
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    // username 파라미터는 실제로는 email입니다
     User user =
         userRepository
-            .findByUsername(username)
+            .findByEmail(username)
             .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
     Collection<GrantedAuthority> authorities =
