@@ -31,6 +31,8 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers("/login", "/login/**")
                     .permitAll()
+                    .requestMatchers("/signup", "/signup/**")
+                    .permitAll()
                     .requestMatchers("/api/v1/oauth2/clients/**")
                     .authenticated() // Client management requires authentication
                     .requestMatchers("/oauth2/**")
