@@ -34,7 +34,6 @@ class UserDetailsServiceImplTest {
     testUser =
         User.builder()
             .id(1L)
-            .username("testuser")
             .email("test@example.com")
             .password("encodedPassword")
             .roles(List.of(Role.ROLE_USER))
@@ -51,15 +50,15 @@ class UserDetailsServiceImplTest {
   @DisplayName("loadUserByUsername: 존재하는 사용자로 UserDetails 로드")
   void shouldLoadUserDetailsByUsername() {
     // given
-    var username = "testuser";
-    given(userRepository.findByUsername(username)).willReturn(Optional.of(testUser));
+    var email = "test@example.com";
+    given(userRepository.findByEmail(email)).willReturn(Optional.of(testUser));
 
     // when
-    var userDetails = userDetailsService.loadUserByUsername(username);
+    var userDetails = userDetailsService.loadUserByUsername(email);
 
     // then
     assertThat(userDetails).isNotNull();
-    assertThat(userDetails.getUsername()).isEqualTo(username);
+    assertThat(userDetails.getUsername()).isEqualTo(email); // getUsername()은 email을 반환
     assertThat(userDetails.getPassword()).isEqualTo(testUser.getPassword());
     assertThat(userDetails.getAuthorities()).hasSize(1);
     assertThat(userDetails.getAuthorities().iterator().next().getAuthority())
@@ -74,13 +73,13 @@ class UserDetailsServiceImplTest {
   @DisplayName("인증 실패: 사용자를 찾을 수 없음")
   void shouldThrowExceptionWhenUserNotFound() {
     // given
-    var username = "nonexistent";
-    given(userRepository.findByUsername(username)).willReturn(Optional.empty());
+    var email = "nonexistent@example.com";
+    given(userRepository.findByEmail(email)).willReturn(Optional.empty());
 
     // when & then
-    assertThatThrownBy(() -> userDetailsService.loadUserByUsername(username))
+    assertThatThrownBy(() -> userDetailsService.loadUserByUsername(email))
         .isInstanceOf(UsernameNotFoundException.class)
-        .hasMessageContaining("User not found: " + username);
+        .hasMessageContaining("User not found: " + email);
   }
 
   @Test
@@ -90,7 +89,6 @@ class UserDetailsServiceImplTest {
     var multiRoleUser =
         User.builder()
             .id(2L)
-            .username("adminuser")
             .email("admin@example.com")
             .password("encodedPassword")
             .roles(List.of(Role.ROLE_USER, Role.ROLE_ADMIN))
@@ -100,10 +98,10 @@ class UserDetailsServiceImplTest {
             .credentialsNonExpired(true)
             .build();
 
-    given(userRepository.findByUsername("adminuser")).willReturn(Optional.of(multiRoleUser));
+    given(userRepository.findByEmail("admin@example.com")).willReturn(Optional.of(multiRoleUser));
 
     // when
-    var userDetails = userDetailsService.loadUserByUsername("adminuser");
+    var userDetails = userDetailsService.loadUserByUsername("admin@example.com");
 
     // then
     assertThat(userDetails.getAuthorities()).hasSize(2);
@@ -118,7 +116,6 @@ class UserDetailsServiceImplTest {
     var disabledUser =
         User.builder()
             .id(3L)
-            .username("disableduser")
             .email("disabled@example.com")
             .password("encodedPassword")
             .roles(List.of(Role.ROLE_USER))
@@ -128,10 +125,10 @@ class UserDetailsServiceImplTest {
             .credentialsNonExpired(true)
             .build();
 
-    given(userRepository.findByUsername("disableduser")).willReturn(Optional.of(disabledUser));
+    given(userRepository.findByEmail("disabled@example.com")).willReturn(Optional.of(disabledUser));
 
     // when
-    var userDetails = userDetailsService.loadUserByUsername("disableduser");
+    var userDetails = userDetailsService.loadUserByUsername("disabled@example.com");
 
     // then
     assertThat(userDetails.isEnabled()).isFalse();
@@ -144,7 +141,6 @@ class UserDetailsServiceImplTest {
     var expiredUser =
         User.builder()
             .id(4L)
-            .username("expireduser")
             .email("expired@example.com")
             .password("encodedPassword")
             .roles(List.of(Role.ROLE_USER))
@@ -154,10 +150,10 @@ class UserDetailsServiceImplTest {
             .credentialsNonExpired(true)
             .build();
 
-    given(userRepository.findByUsername("expireduser")).willReturn(Optional.of(expiredUser));
+    given(userRepository.findByEmail("expired@example.com")).willReturn(Optional.of(expiredUser));
 
     // when
-    var userDetails = userDetailsService.loadUserByUsername("expireduser");
+    var userDetails = userDetailsService.loadUserByUsername("expired@example.com");
 
     // then
     assertThat(userDetails.isAccountNonExpired()).isFalse();

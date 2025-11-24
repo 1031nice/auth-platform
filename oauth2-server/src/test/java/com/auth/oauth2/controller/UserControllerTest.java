@@ -40,7 +40,6 @@ class UserControllerTest {
     savedUser =
         User.builder()
             .id(1L)
-            .username("testuser")
             .email("test@example.com")
             .password("encodedPassword")
             .roles(Arrays.asList(Role.ROLE_USER))
@@ -90,7 +89,6 @@ class UserControllerTest {
     mockMvc
         .perform(
             post("/signup")
-                .param("username", "testuser")
                 .param("email", "test@example.com")
                 .param("password", "password123"))
         .andExpect(status().is3xxRedirection())
@@ -110,7 +108,6 @@ class UserControllerTest {
     mockMvc
         .perform(
             post("/signup")
-                .param("username", "testuser")
                 .param("email", "test@example.com")
                 .param("password", "password123")
                 .param("redirectUri", "http://localhost:3000/callback")
@@ -128,7 +125,6 @@ class UserControllerTest {
     mockMvc
         .perform(
             post("/signup")
-                .param("username", "") // 빈 값으로 유효성 검증 실패
                 .param("email", "invalid-email")
                 .param("password", "123")) // 최소 길이 미달
         .andExpect(status().isOk())
@@ -143,18 +139,17 @@ class UserControllerTest {
   void signup_shouldShowErrorWhenServiceThrowsException() throws Exception {
     // given
     given(userService.signup(any(SignupRequest.class)))
-        .willThrow(new RuntimeException("Username already exists"));
+        .willThrow(new RuntimeException("Email already exists"));
 
     // when & then
     mockMvc
         .perform(
             post("/signup")
-                .param("username", "testuser")
                 .param("email", "test@example.com")
                 .param("password", "password123"))
         .andExpect(status().isOk())
         .andExpect(view().name("signup"))
-        .andExpect(model().attribute("error", "Username already exists"));
+        .andExpect(model().attribute("error", "Email already exists"));
 
     then(userService).should(times(1)).signup(any(SignupRequest.class));
   }
@@ -170,7 +165,6 @@ class UserControllerTest {
     mockMvc
         .perform(
             post("/signup")
-                .param("username", "testuser")
                 .param("email", "test@example.com")
                 .param("password", "password123")
                 .param("redirectUri", "http://localhost:3000/callback")

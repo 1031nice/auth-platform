@@ -21,10 +21,7 @@ public class User {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false, unique = true, length = 50)
-  private String username;
-
-  @Column(nullable = false, length = 100)
+  @Column(nullable = false, unique = true, length = 100)
   private String email;
 
   @Column(nullable = false)
@@ -68,5 +65,13 @@ public class User {
   @PreUpdate
   protected void onUpdate() {
     updatedAt = LocalDateTime.now();
+  }
+
+  /**
+   * Spring Security의 UserDetailsService에서 사용하는 username을 반환합니다.
+   * 실제로는 email을 반환합니다.
+   */
+  public String getUsername() {
+    return email;
   }
 }

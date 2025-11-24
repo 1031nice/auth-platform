@@ -8,11 +8,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
-  Optional<User> findByUsername(String username);
-
   Optional<User> findByEmail(String email);
 
-  boolean existsByUsername(String username);
-
   boolean existsByEmail(String email);
+
+  // Spring Security 호환성을 위한 메서드 (실제로는 email로 조회)
+  default Optional<User> findByUsername(String username) {
+    return findByEmail(username);
+  }
 }

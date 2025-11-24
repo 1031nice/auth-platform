@@ -41,7 +41,6 @@ class UserServiceTest {
   void setUp() {
     signupRequest =
         SignupRequest.builder()
-            .username("testuser")
             .email("test@example.com")
             .password("password123")
             .build();
@@ -49,7 +48,6 @@ class UserServiceTest {
     savedUser =
         User.builder()
             .id(1L)
-            .username("testuser")
             .email("test@example.com")
             .password("encodedPassword")
             .roles(Arrays.asList(Role.ROLE_USER))
@@ -79,7 +77,6 @@ class UserServiceTest {
   @DisplayName("signup: 회원가입 성공")
   void signup_shouldCreateUserSuccessfully() {
     // given
-    given(userRepository.existsByUsername("testuser")).willReturn(false);
     given(userRepository.existsByEmail("test@example.com")).willReturn(false);
     given(passwordEncoder.encode("password123")).willReturn("encodedPassword");
     given(userRepository.save(any(User.class))).willReturn(savedUser);
@@ -89,13 +86,12 @@ class UserServiceTest {
 
     // then
     assertThat(result).isNotNull();
-    assertThat(result.getUsername()).isEqualTo("testuser");
+    assertThat(result.getUsername()).isEqualTo("test@example.com"); // getUsername()은 email을 반환
     assertThat(result.getEmail()).isEqualTo("test@example.com");
     assertThat(result.getPassword()).isEqualTo("encodedPassword");
     assertThat(result.getRoles()).containsExactly(Role.ROLE_USER);
     assertThat(result.getEnabled()).isTrue();
 
-    then(userRepository).should(times(1)).existsByUsername("testuser");
     then(userRepository).should(times(1)).existsByEmail("test@example.com");
     then(passwordEncoder).should(times(1)).encode("password123");
     then(userRepository).should(times(1)).save(any(User.class));
@@ -108,7 +104,6 @@ class UserServiceTest {
     signupRequest.setRedirectUri("http://localhost:3000/callback");
     signupRequest.setClientId("test-client");
 
-    given(userRepository.existsByUsername("testuser")).willReturn(false);
     given(userRepository.existsByEmail("test@example.com")).willReturn(false);
     given(clientRepository.findByClientId("test-client"))
         .willReturn(Optional.of(oAuth2Client));
@@ -124,26 +119,9 @@ class UserServiceTest {
   }
 
   @Test
-  @DisplayName("signup 실패: 이미 존재하는 username")
-  void signup_shouldThrowExceptionWhenUsernameExists() {
-    // given
-    given(userRepository.existsByUsername("testuser")).willReturn(true);
-
-    // when & then
-    assertThatThrownBy(() -> userService.signup(signupRequest))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Username already exists");
-
-    then(userRepository).should(times(1)).existsByUsername("testuser");
-    then(userRepository).should(never()).existsByEmail(anyString());
-    then(userRepository).should(never()).save(any(User.class));
-  }
-
-  @Test
   @DisplayName("signup 실패: 이미 존재하는 email")
   void signup_shouldThrowExceptionWhenEmailExists() {
     // given
-    given(userRepository.existsByUsername("testuser")).willReturn(false);
     given(userRepository.existsByEmail("test@example.com")).willReturn(true);
 
     // when & then
@@ -151,7 +129,6 @@ class UserServiceTest {
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Email already exists");
 
-    then(userRepository).should(times(1)).existsByUsername("testuser");
     then(userRepository).should(times(1)).existsByEmail("test@example.com");
     then(userRepository).should(never()).save(any(User.class));
   }
@@ -163,7 +140,6 @@ class UserServiceTest {
     signupRequest.setRedirectUri("http://localhost:3000/callback");
     signupRequest.setClientId("invalid-client");
 
-    given(userRepository.existsByUsername("testuser")).willReturn(false);
     given(userRepository.existsByEmail("test@example.com")).willReturn(false);
     given(clientRepository.findByClientId("invalid-client")).willReturn(Optional.empty());
 
@@ -183,7 +159,6 @@ class UserServiceTest {
     signupRequest.setRedirectUri("http://malicious.com/callback");
     signupRequest.setClientId("test-client");
 
-    given(userRepository.existsByUsername("testuser")).willReturn(false);
     given(userRepository.existsByEmail("test@example.com")).willReturn(false);
     given(clientRepository.findByClientId("test-client"))
         .willReturn(Optional.of(oAuth2Client));
@@ -204,7 +179,6 @@ class UserServiceTest {
     signupRequest.setRedirectUri("http://localhost:3000/callback");
     signupRequest.setClientId(null);
 
-    given(userRepository.existsByUsername("testuser")).willReturn(false);
     given(userRepository.existsByEmail("test@example.com")).willReturn(false);
     given(passwordEncoder.encode("password123")).willReturn("encodedPassword");
     given(userRepository.save(any(User.class))).willReturn(savedUser);

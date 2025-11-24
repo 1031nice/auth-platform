@@ -22,8 +22,9 @@ public class CustomOAuth2TokenCustomizer implements OAuth2TokenCustomizer<JwtEnc
 
     if (principal != null && principal.getName() != null) {
       // Add user information to the token
+      // principal.getName()은 실제로는 email입니다
       userRepository
-          .findByUsername(principal.getName())
+          .findByEmail(principal.getName())
           .ifPresent(
               user -> {
                 List<String> roles =

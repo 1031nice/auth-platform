@@ -22,11 +22,6 @@ public class UserService {
 
   @Transactional
   public User signup(SignupRequest request) {
-    // Username 중복 검증
-    if (userRepository.existsByUsername(request.getUsername())) {
-      throw new RuntimeException("Username already exists");
-    }
-
     // Email 중복 검증
     if (userRepository.existsByEmail(request.getEmail())) {
       throw new RuntimeException("Email already exists");
@@ -43,7 +38,6 @@ public class UserService {
     // User 엔티티 생성
     User user =
         User.builder()
-            .username(request.getUsername())
             .email(request.getEmail())
             .password(encodedPassword)
             .roles(Collections.singletonList(Role.ROLE_USER))
