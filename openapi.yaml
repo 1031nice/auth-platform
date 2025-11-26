@@ -1,0 +1,612 @@
+openapi: 3.0.3
+info:
+  title: Auth Platform API
+  description: |
+    Centralized authentication and authorization platform API.
+    This API provides OAuth2/OIDC-compliant authentication services for multiple side projects.
+  version: 1.0.0
+  contact:
+    name: Auth Platform
+    url: https://github.com/your-username/auth-platform
+
+servers:
+  - url: http://localhost:8081
+    description: OAuth2 Authorization Server (Development)
+  - url: http://localhost:8082
+    description: OAuth2 Resource Server (Development)
+
+tags:
+  - name: OAuth2 Clients
+    description: OAuth2 client registration and management
+  - name: User Signup
+    description: User registration endpoints
+  - name: OAuth2
+    description: Standard OAuth2/OIDC endpoints
+  - name: UserInfo
+    description: User information endpoints
+
+paths:
+  /api/v1/oauth2/clients:
+    post:
+      tags:
+        - OAuth2 Clients
+      summary: Register OAuth2 Client
+      description: Register a new OAuth2 client for your application
+      operationId: createOAuth2Client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuth2ClientRequest'
+            example:
+              clientId: "my-slack-clone"
+              clientSecret: "my-secret-key"
+              redirectUris:
+                - "http://localhost:3000/auth/callback"
+                - "http://localhost:3000/signup/callback"
+              scopes:
+                - "read"
+                - "write"
+              grantTypes:
+                - "authorization_code"
+                - "refresh_token"
+      responses:
+        '201':
+          description: Client created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuth2ClientResponse'
+        '400':
+          description: Bad request (validation error or duplicate client ID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      tags:
+        - OAuth2 Clients
+      summary: List all OAuth2 Clients
+      description: Get a list of all registered OAuth2 clients
+      operationId: getAllOAuth2Clients
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of clients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OAuth2ClientResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/oauth2/clients/{clientId}:
+    get:
+      tags:
+        - OAuth2 Clients
+      summary: Get OAuth2 Client
+      description: Get details of a specific OAuth2 client
+      operationId: getOAuth2Client
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The client ID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Client details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuth2ClientResponse'
+        '404':
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - OAuth2 Clients
+      summary: Delete OAuth2 Client
+      description: Delete an OAuth2 client
+      operationId: deleteOAuth2Client
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The client ID
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Client deleted successfully
+        '404':
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /signup:
+    get:
+      tags:
+        - User Signup
+      summary: Show signup page
+      description: |
+        Display the user signup page. This endpoint redirects users from external applications.
+        After successful signup, users are redirected back to the provided redirect_uri.
+      operationId: showSignupPage
+      parameters:
+        - name: redirect_uri
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uri
+          description: Callback URL after successful signup
+        - name: client_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: OAuth2 client ID for redirect_uri validation
+      responses:
+        '200':
+          description: Signup page (HTML)
+          content:
+            text/html:
+              schema:
+                type: string
+    post:
+      tags:
+        - User Signup
+      summary: Register new user
+      description: |
+        Register a new user account. On success, redirects to redirect_uri if provided,
+        otherwise redirects to login page.
+      operationId: signup
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+            encoding:
+              email:
+                contentType: text/plain
+              password:
+                contentType: text/plain
+              redirectUri:
+                contentType: text/plain
+              clientId:
+                contentType: text/plain
+      responses:
+        '302':
+          description: Redirect to callback URL or login page
+          headers:
+            Location:
+              schema:
+                type: string
+                example: "http://localhost:3000/callback?success=true"
+        '200':
+          description: Signup page with validation errors (HTML)
+          content:
+            text/html:
+              schema:
+                type: string
+        '400':
+          description: Validation error or duplicate email
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /oauth2/authorize:
+    get:
+      tags:
+        - OAuth2
+      summary: OAuth2 Authorization Endpoint
+      description: |
+        Standard OAuth2 authorization endpoint. Redirect users here to start the
+        authorization code flow.
+      operationId: authorize
+      parameters:
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: OAuth2 client ID
+        - name: response_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [code]
+          description: Must be "code" for authorization code flow
+        - name: redirect_uri
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+          description: Callback URL after authorization
+        - name: scope
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Requested scopes (space-separated)
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+          description: CSRF protection token
+        - name: code_challenge
+          in: query
+          required: false
+          schema:
+            type: string
+          description: PKCE code challenge
+        - name: code_challenge_method
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [S256]
+          description: PKCE code challenge method
+      responses:
+        '302':
+          description: Redirect to redirect_uri with authorization code
+          headers:
+            Location:
+              schema:
+                type: string
+                example: "http://localhost:3000/callback?code=abc123&state=xyz"
+        '400':
+          description: Invalid request
+        '401':
+          description: User not authenticated (redirects to login)
+
+  /oauth2/token:
+    post:
+      tags:
+        - OAuth2
+      summary: OAuth2 Token Endpoint
+      description: |
+        Standard OAuth2 token endpoint. Exchange authorization code for access token,
+        refresh access token, or get token via client credentials flow.
+      operationId: token
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/TokenRequestAuthorizationCode'
+                - $ref: '#/components/schemas/TokenRequestRefreshToken'
+                - $ref: '#/components/schemas/TokenRequestClientCredentials'
+      security:
+        - basicAuth: []
+      responses:
+        '200':
+          description: Token response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /oauth2/jwks:
+    get:
+      tags:
+        - OAuth2
+      summary: JSON Web Key Set
+      description: |
+        Returns the JSON Web Key Set (JWKS) used to verify JWT tokens issued by this server.
+        Used by Resource Server for token validation.
+      operationId: jwks
+      responses:
+        '200':
+          description: JWK Set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JWKSet'
+
+  /userinfo:
+    get:
+      tags:
+        - UserInfo
+      summary: OIDC UserInfo Endpoint
+      description: |
+        Returns user information for the authenticated user.
+        Requires a valid OAuth2 access token.
+      operationId: getUserInfo
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+        '401':
+          description: Unauthorized (invalid or missing token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: OAuth2 access token
+    basicAuth:
+      type: http
+      scheme: basic
+      description: Client credentials (client_id:client_secret)
+
+  schemas:
+    OAuth2ClientRequest:
+      type: object
+      required:
+        - clientId
+        - clientSecret
+        - grantTypes
+      properties:
+        clientId:
+          type: string
+          description: Unique client identifier
+          example: "my-slack-clone"
+        clientSecret:
+          type: string
+          description: Client secret for authentication
+          example: "my-secret-key"
+        redirectUris:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: Allowed redirect URIs
+          example: ["http://localhost:3000/callback"]
+        scopes:
+          type: array
+          items:
+            type: string
+          description: Supported scopes
+          example: ["read", "write"]
+        grantTypes:
+          type: array
+          items:
+            type: string
+            enum: [authorization_code, refresh_token, client_credentials]
+          description: Supported OAuth2 grant types
+          minItems: 1
+          example: ["authorization_code", "refresh_token"]
+
+    OAuth2ClientResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Internal client ID
+        clientId:
+          type: string
+          description: Client identifier
+        redirectUris:
+          type: array
+          items:
+            type: string
+          description: Registered redirect URIs
+        scopes:
+          type: array
+          items:
+            type: string
+          description: Supported scopes
+        grantTypes:
+          type: array
+          items:
+            type: string
+          description: Supported grant types
+        enabled:
+          type: boolean
+          description: Whether the client is enabled
+        createdAt:
+          type: string
+          format: date-time
+          description: Client creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    SignupRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address (used as username)
+          example: "user@example.com"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          description: User password (minimum 8 characters)
+          example: "password123"
+        redirectUri:
+          type: string
+          format: uri
+          description: Callback URL after successful signup
+          example: "http://localhost:3000/callback"
+        clientId:
+          type: string
+          description: OAuth2 client ID for redirect_uri validation
+          example: "my-slack-clone"
+
+    TokenRequestAuthorizationCode:
+      type: object
+      required:
+        - grant_type
+        - code
+        - client_id
+        - redirect_uri
+      properties:
+        grant_type:
+          type: string
+          enum: [authorization_code]
+          example: "authorization_code"
+        code:
+          type: string
+          description: Authorization code from /oauth2/authorize
+        client_id:
+          type: string
+          description: OAuth2 client ID
+        redirect_uri:
+          type: string
+          format: uri
+          description: Same redirect_uri used in authorization request
+        code_verifier:
+          type: string
+          description: PKCE code verifier (if PKCE was used)
+
+    TokenRequestRefreshToken:
+      type: object
+      required:
+        - grant_type
+        - refresh_token
+      properties:
+        grant_type:
+          type: string
+          enum: [refresh_token]
+          example: "refresh_token"
+        refresh_token:
+          type: string
+          description: Refresh token from previous token response
+
+    TokenRequestClientCredentials:
+      type: object
+      required:
+        - grant_type
+      properties:
+        grant_type:
+          type: string
+          enum: [client_credentials]
+          example: "client_credentials"
+        scope:
+          type: string
+          description: Requested scopes (space-separated)
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: OAuth2 access token (JWT)
+        token_type:
+          type: string
+          example: "Bearer"
+        expires_in:
+          type: integer
+          description: Access token expiration time in seconds
+          example: 86400
+        refresh_token:
+          type: string
+          description: Refresh token (only for authorization_code flow)
+        scope:
+          type: string
+          description: Granted scopes
+
+    UserInfo:
+      type: object
+      properties:
+        sub:
+          type: string
+          description: Subject (user ID)
+          example: "1"
+        name:
+          type: string
+          description: User's email (used as identifier)
+          example: "user@example.com"
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "user@example.com"
+        email_verified:
+          type: boolean
+          description: Whether email is verified
+          example: true
+        preferred_username:
+          type: string
+          description: Preferred username (same as email)
+          example: "user@example.com"
+
+    JWKSet:
+      type: object
+      description: JSON Web Key Set for token verification
+      properties:
+        keys:
+          type: array
+          items:
+            type: object
+            description: JSON Web Key
+
+    Error:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: HTTP status code
+        message:
+          type: string
+          description: Error message
+        error:
+          type: string
+          description: Error type (optional)
+        errors:
+          type: object
+          description: Field validation errors (optional)
+
