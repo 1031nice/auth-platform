@@ -4,11 +4,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -18,8 +20,17 @@ public class SecurityConfig {
 
   @Bean
   @Order(2)
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http.csrf(
+  public SecurityFilterChain securityFilterChain(
+      HttpSecurity http, UserDetailsService userDetailsService) throws Exception {
+    // 사용자 인증용 DaoAuthenticationProvider 설정
+    // BCryptPasswordEncoder를 빈으로 등록하지 않고 직접 생성하여 빈 충돌 방지
+    BCryptPasswordEncoder userPasswordEncoder = new BCryptPasswordEncoder();
+    DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+    authProvider.setUserDetailsService(userDetailsService);
+    authProvider.setPasswordEncoder(userPasswordEncoder);
+
+    http.authenticationProvider(authProvider)
+        .csrf(
             csrf ->
                 csrf
                     // OAuth2 엔드포인트는 state 파라미터로 CSRF 보호 (OAuth2 표준)
@@ -62,7 +73,9 @@ public class SecurityConfig {
 
   @Bean
   public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
+    // OAuth2 client secret 검증용: OAuth2 표준에 따라 평문 비교
+    // OAuth2AuthorizationServerConfig에서 @Qualifier로 명시적으로 지정
+    return NoOpPasswordEncoder.getInstance();
   }
 
   @Bean

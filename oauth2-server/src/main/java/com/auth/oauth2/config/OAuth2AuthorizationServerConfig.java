@@ -10,12 +10,15 @@ import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
@@ -24,12 +27,19 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
 @Configuration
+@RequiredArgsConstructor
 public class OAuth2AuthorizationServerConfig {
+
+  @Qualifier("passwordEncoder")
+  private final PasswordEncoder passwordEncoder;
 
   @Bean
   @Order(1)
   public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
       throws Exception {
+    // HttpSecurity에 PasswordEncoder를 명시적으로 설정
+    // OAuth2AuthorizationServerConfiguration이 이를 사용하도록 함
+    http.setSharedObject(PasswordEncoder.class, passwordEncoder);
     OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 
     http

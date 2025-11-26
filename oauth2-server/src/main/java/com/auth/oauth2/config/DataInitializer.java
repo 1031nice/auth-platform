@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,7 +23,8 @@ public class DataInitializer {
 
   private final UserRepository userRepository;
   private final OAuth2ClientRepository clientRepository;
-  private final PasswordEncoder passwordEncoder;
+  // BCryptPasswordEncoder를 빈으로 등록하지 않고 직접 생성하여 빈 충돌 방지
+  private final BCryptPasswordEncoder userPasswordEncoder = new BCryptPasswordEncoder();
 
   @EventListener(ApplicationReadyEvent.class)
   @Transactional
@@ -38,7 +39,7 @@ public class DataInitializer {
       User testUser =
           User.builder()
               .email("test@example.com")
-              .password(passwordEncoder.encode("password123"))
+              .password(userPasswordEncoder.encode("password123"))
               .roles(Collections.singletonList(Role.ROLE_USER))
               .enabled(true)
               .accountNonExpired(true)

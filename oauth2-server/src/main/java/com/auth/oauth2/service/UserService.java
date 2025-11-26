@@ -8,7 +8,7 @@ import com.auth.oauth2.repository.OAuth2ClientRepository;
 import com.auth.oauth2.repository.UserRepository;
 import java.util.Collections;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +18,8 @@ public class UserService {
 
   private final UserRepository userRepository;
   private final OAuth2ClientRepository clientRepository;
-  private final PasswordEncoder passwordEncoder;
+  // BCryptPasswordEncoder를 빈으로 등록하지 않고 직접 생성하여 빈 충돌 방지
+  private final BCryptPasswordEncoder userPasswordEncoder = new BCryptPasswordEncoder();
 
   @Transactional
   public User signup(SignupRequest request) {
@@ -33,7 +34,7 @@ public class UserService {
     }
 
     // 비밀번호 암호화
-    String encodedPassword = passwordEncoder.encode(request.getPassword());
+    String encodedPassword = userPasswordEncoder.encode(request.getPassword());
 
     // User 엔티티 생성
     User user =
