@@ -21,7 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserService tests")
@@ -29,9 +29,10 @@ class UserServiceTest {
 
   @Mock private UserRepository userRepository;
   @Mock private OAuth2ClientRepository clientRepository;
-  @Mock private PasswordEncoder passwordEncoder;
 
   @InjectMocks private UserService userService;
+  
+  private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
   private SignupRequest signupRequest;
   private User savedUser;
@@ -78,8 +79,21 @@ class UserServiceTest {
   void signup_shouldCreateUserSuccessfully() {
     // given
     given(userRepository.existsByEmail("test@example.com")).willReturn(false);
-    given(passwordEncoder.encode("password123")).willReturn("encodedPassword");
-    given(userRepository.save(any(User.class))).willReturn(savedUser);
+    given(userRepository.save(any(User.class))).willAnswer(invocation -> {
+      User user = invocation.getArgument(0);
+      return User.builder()
+          .id(1L)
+          .email(user.getEmail())
+          .password(user.getPassword())
+          .roles(user.getRoles())
+          .enabled(user.getEnabled())
+          .accountNonExpired(user.getAccountNonExpired())
+          .accountNonLocked(user.getAccountNonLocked())
+          .credentialsNonExpired(user.getCredentialsNonExpired())
+          .createdAt(LocalDateTime.now())
+          .updatedAt(LocalDateTime.now())
+          .build();
+    });
 
     // when
     var result = userService.signup(signupRequest);
@@ -88,12 +102,12 @@ class UserServiceTest {
     assertThat(result).isNotNull();
     assertThat(result.getUsername()).isEqualTo("test@example.com"); // getUsername()은 email을 반환
     assertThat(result.getEmail()).isEqualTo("test@example.com");
-    assertThat(result.getPassword()).isEqualTo("encodedPassword");
+    // BCrypt로 인코딩된 비밀번호가 올바른지 확인
+    assertThat(passwordEncoder.matches("password123", result.getPassword())).isTrue();
     assertThat(result.getRoles()).containsExactly(Role.ROLE_USER);
     assertThat(result.getEnabled()).isTrue();
 
     then(userRepository).should(times(1)).existsByEmail("test@example.com");
-    then(passwordEncoder).should(times(1)).encode("password123");
     then(userRepository).should(times(1)).save(any(User.class));
   }
 
@@ -107,8 +121,21 @@ class UserServiceTest {
     given(userRepository.existsByEmail("test@example.com")).willReturn(false);
     given(clientRepository.findByClientId("test-client"))
         .willReturn(Optional.of(oAuth2Client));
-    given(passwordEncoder.encode("password123")).willReturn("encodedPassword");
-    given(userRepository.save(any(User.class))).willReturn(savedUser);
+    given(userRepository.save(any(User.class))).willAnswer(invocation -> {
+      User user = invocation.getArgument(0);
+      return User.builder()
+          .id(1L)
+          .email(user.getEmail())
+          .password(user.getPassword())
+          .roles(user.getRoles())
+          .enabled(user.getEnabled())
+          .accountNonExpired(user.getAccountNonExpired())
+          .accountNonLocked(user.getAccountNonLocked())
+          .credentialsNonExpired(user.getCredentialsNonExpired())
+          .createdAt(LocalDateTime.now())
+          .updatedAt(LocalDateTime.now())
+          .build();
+    });
 
     // when
     var result = userService.signup(signupRequest);
@@ -180,8 +207,21 @@ class UserServiceTest {
     signupRequest.setClientId(null);
 
     given(userRepository.existsByEmail("test@example.com")).willReturn(false);
-    given(passwordEncoder.encode("password123")).willReturn("encodedPassword");
-    given(userRepository.save(any(User.class))).willReturn(savedUser);
+    given(userRepository.save(any(User.class))).willAnswer(invocation -> {
+      User user = invocation.getArgument(0);
+      return User.builder()
+          .id(1L)
+          .email(user.getEmail())
+          .password(user.getPassword())
+          .roles(user.getRoles())
+          .enabled(user.getEnabled())
+          .accountNonExpired(user.getAccountNonExpired())
+          .accountNonLocked(user.getAccountNonLocked())
+          .credentialsNonExpired(user.getCredentialsNonExpired())
+          .createdAt(LocalDateTime.now())
+          .updatedAt(LocalDateTime.now())
+          .build();
+    });
 
     // when
     var result = userService.signup(signupRequest);
