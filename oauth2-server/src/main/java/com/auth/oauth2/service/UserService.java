@@ -29,7 +29,10 @@ public class UserService {
     }
 
     // redirect_uri 검증 (clientId가 제공된 경우)
-    if (request.getClientId() != null && request.getRedirectUri() != null) {
+    if (request.getClientId() != null 
+        && !request.getClientId().isBlank() 
+        && request.getRedirectUri() != null 
+        && !request.getRedirectUri().isBlank()) {
       validateRedirectUri(request.getRedirectUri(), request.getClientId());
     }
 
