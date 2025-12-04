@@ -1,0 +1,5 @@
+oauth2:
+  clients:
+    test-client:
+      enabled: true
+

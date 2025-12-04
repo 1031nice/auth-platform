@@ -66,6 +66,51 @@ rate-limit:
       refill-rate: 50
       refill-period-seconds: 60
 
+oauth2:
+  clients:
+    default-token-settings:
+      access-token-ttl: PT24H
+      refresh-token-ttl: P7D
+    default-clients:
+      slack:
+        enabled: true
+        client-id: slack
+        client-secret: slack-secret-key
+        redirect-uris:
+          - http://localhost:3000/auth/callback
+          - http://localhost:3000/signup/callback
+          - http://localhost:3000/callback
+        scopes:
+          - read
+          - write
+        grant-types:
+          - authorization_code
+          - refresh_token
+          - client_credentials
+    test-client:
+      enabled: true
+      client-id: test-client
+      client-secret: test-secret-key
+      redirect-uris:
+        - http://localhost:3000/auth/callback
+        - http://localhost:3000/signup/callback
+        - http://localhost:3000/callback
+        - http://localhost:3001/auth/callback
+        - http://localhost:3001/callback
+      scopes:
+        - read
+        - write
+        - openid
+        - profile
+        - email
+      grant-types:
+        - authorization_code
+        - refresh_token
+        - client_credentials
+      token-settings:
+        access-token-ttl: P36500D
+        refresh-token-ttl: P36500D
+
 logging:
   level:
     com.auth: DEBUG

@@ -19,6 +19,8 @@ public class OAuth2ClientResponse {
   private List<String> scopes;
   private List<String> grantTypes;
   private Boolean enabled;
+  private Long customAccessTokenTtlSeconds;
+  private Long customRefreshTokenTtlSeconds;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 }

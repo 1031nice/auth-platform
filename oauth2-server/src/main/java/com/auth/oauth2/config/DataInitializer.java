@@ -5,9 +5,8 @@ import com.auth.oauth2.domain.entity.Role;
 import com.auth.oauth2.domain.entity.User;
 import com.auth.oauth2.repository.OAuth2ClientRepository;
 import com.auth.oauth2.repository.UserRepository;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -23,6 +22,7 @@ public class DataInitializer {
 
   private final UserRepository userRepository;
   private final OAuth2ClientRepository clientRepository;
+  private final OAuth2ClientProperties clientProperties;
   // BCryptPasswordEncoder를 빈으로 등록하지 않고 직접 생성하여 빈 충돌 방지
   private final BCryptPasswordEncoder userPasswordEncoder = new BCryptPasswordEncoder();
 
@@ -55,33 +55,70 @@ public class DataInitializer {
   }
 
   private void initializeDefaultClients() {
-    // Create default slack client
-    if (!clientRepository.existsByClientId("slack")) {
-      List<String> redirectUris =
-          Arrays.asList(
-              "http://localhost:3000/auth/callback",
-              "http://localhost:3000/signup/callback",
-              "http://localhost:3000/callback");
-      List<String> scopes = Arrays.asList("read", "write");
-      List<String> grantTypes =
-          Arrays.asList("authorization_code", "refresh_token", "client_credentials");
+    // Slack client
+    if (clientProperties.getDefaultClients().getSlack().isEnabled()) {
+      initializeSlackClient();
+    }
 
+    // Test client (조건부)
+    if (clientProperties.getTestClient().isEnabled()) {
+      initializeTestClient();
+    }
+  }
+
+  private void initializeSlackClient() {
+    var slackConfig = clientProperties.getDefaultClients().getSlack();
+
+    if (!clientRepository.existsByClientId(slackConfig.getClientId())) {
       OAuth2Client slackClient =
           OAuth2Client.builder()
-              .clientId("slack")
-              .clientSecret("slack-secret-key")
-              .redirectUris(redirectUris)
-              .scopes(scopes)
-              .grantTypes(grantTypes)
+              .clientId(slackConfig.getClientId())
+              .clientSecret(slackConfig.getClientSecret())
+              .redirectUris(new ArrayList<>(slackConfig.getRedirectUris()))
+              .scopes(new ArrayList<>(slackConfig.getScopes()))
+              .grantTypes(new ArrayList<>(slackConfig.getGrantTypes()))
               .enabled(true)
               .build();
 
       clientRepository.save(slackClient);
       log.info(
-          "Default slack client created: clientId=slack, clientSecret=slack-secret-key, redirectUris={}",
-          redirectUris);
+          "Slack client created: clientId={}, redirectUris={}",
+          slackConfig.getClientId(),
+          slackConfig.getRedirectUris());
     } else {
-      log.debug("Default slack client already exists");
+      log.debug("Slack client already exists");
+    }
+  }
+
+  private void initializeTestClient() {
+    var testConfig = clientProperties.getTestClient();
+
+    if (!clientRepository.existsByClientId(testConfig.getClientId())) {
+      // 테스트 클라이언트용 커스텀 TTL (100년 = 실질적으로 만료 안됨)
+      long customTtlSeconds = testConfig.getTokenSettings().getAccessTokenTtl().getSeconds();
+
+      OAuth2Client testClient =
+          OAuth2Client.builder()
+              .clientId(testConfig.getClientId())
+              .clientSecret(testConfig.getClientSecret())
+              .redirectUris(new ArrayList<>(testConfig.getRedirectUris()))
+              .scopes(new ArrayList<>(testConfig.getScopes()))
+              .grantTypes(new ArrayList<>(testConfig.getGrantTypes()))
+              .enabled(true)
+              .customAccessTokenTtlSeconds(customTtlSeconds)
+              .customRefreshTokenTtlSeconds(customTtlSeconds)
+              .build();
+
+      clientRepository.save(testClient);
+      log.info(
+          "Test client created with custom TTL: clientId={}, accessTokenTtl={}days, "
+              + "refreshTokenTtl={}days, redirectUris={}",
+          testConfig.getClientId(),
+          customTtlSeconds / 86400, // 초를 일수로 변환
+          customTtlSeconds / 86400,
+          testConfig.getRedirectUris());
+    } else {
+      log.debug("Test client already exists");
     }
   }
 }

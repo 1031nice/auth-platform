@@ -96,6 +96,115 @@ docker-compose up -d redis
 docker-compose down
 ```
 
+## Test Client
+
+A test client is automatically created when the server starts for testing purposes.
+
+### Test Client Information
+
+- **Client ID**: `test-client`
+- **Client Secret**: `test-secret-key`
+- **Token Expiration**: 100 years (effectively never expires)
+- **Grant Types**: `authorization_code`, `refresh_token`, `client_credentials`
+- **Scopes**: `read`, `write`, `openid`, `profile`, `email`
+- **Redirect URIs**:
+  - `http://localhost:3000/auth/callback`
+  - `http://localhost:3000/signup/callback`
+  - `http://localhost:3000/callback`
+  - `http://localhost:3001/auth/callback`
+  - `http://localhost:3001/callback`
+
+### Test Token Issuance
+
+#### 1. Client Credentials Grant (Server-to-Server)
+
+```bash
+curl -X POST http://localhost:8081/oauth2/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -u "test-client:test-secret-key" \
+  -d "grant_type=client_credentials" \
+  -d "scope=read write"
+```
+
+**Response Example:**
+```json
+{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3153600000,
+  "scope": "read write"
+}
+```
+
+#### 2. Authorization Code Grant (Web Application)
+
+**Step 1: Authorization Request**
+Access the following URL in your browser:
+```
+http://localhost:8081/oauth2/authorize?client_id=test-client&response_type=code&redirect_uri=http://localhost:3000/auth/callback&scope=read write openid
+```
+
+**Step 2: Login**
+- Email: `t@t.com`
+- Password: `1234`
+
+**Step 3: Exchange Authorization Code for Token**
+```bash
+curl -X POST http://localhost:8081/oauth2/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -u "test-client:test-secret-key" \
+  -d "grant_type=authorization_code" \
+  -d "code={authorization_code}" \
+  -d "redirect_uri=http://localhost:3000/auth/callback"
+```
+
+**Response Example:**
+```json
+{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3153600000,
+  "scope": "read write openid",
+  "id_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+#### 3. Refresh Token
+
+```bash
+curl -X POST http://localhost:8081/oauth2/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -u "test-client:test-secret-key" \
+  -d "grant_type=refresh_token" \
+  -d "refresh_token={refresh_token}"
+```
+
+### Test Token Usage Example
+
+#### Resource Server API Call
+
+```bash
+curl -X GET http://localhost:8082/userinfo \
+  -H "Authorization: Bearer {access_token}"
+```
+
+**Response Example:**
+```json
+{
+  "sub": "1",
+  "name": "t@t.com",
+  "email": "t@t.com",
+  "email_verified": true,
+  "preferred_username": "t@t.com"
+}
+```
+
+### ⚠️ Important Notes
+
+- **Test Only**: This client and tokens are for development/testing environments only.
+- **Security**: Never use in production. Tokens do not expire, which poses a security risk.
+
 ## Integration Guide
 
 ### 1. Register OAuth2 Client

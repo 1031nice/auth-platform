@@ -55,6 +55,20 @@ public class OAuth2Client {
   @Builder.Default
   private Boolean enabled = true;
 
+  /**
+   * 커스텀 액세스 토큰 TTL (초 단위)
+   * null이면 기본 설정 사용
+   */
+  @Column(name = "custom_access_token_ttl_seconds")
+  private Long customAccessTokenTtlSeconds;
+
+  /**
+   * 커스텀 리프레시 토큰 TTL (초 단위)
+   * null이면 기본 설정 사용
+   */
+  @Column(name = "custom_refresh_token_ttl_seconds")
+  private Long customRefreshTokenTtlSeconds;
+
   @Column(nullable = false, updatable = false)
   private LocalDateTime createdAt;
 

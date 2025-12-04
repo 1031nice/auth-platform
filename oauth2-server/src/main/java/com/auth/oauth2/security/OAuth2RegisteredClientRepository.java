@@ -1,8 +1,8 @@
 package com.auth.oauth2.security;
 
+import com.auth.oauth2.config.OAuth2ClientProperties;
 import com.auth.oauth2.domain.entity.OAuth2Client;
 import com.auth.oauth2.repository.OAuth2ClientRepository;
-import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
@@ -12,11 +12,14 @@ import org.springframework.security.oauth2.server.authorization.settings.ClientS
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
+
 @Component
 @RequiredArgsConstructor
 public class OAuth2RegisteredClientRepository implements RegisteredClientRepository {
 
   private final OAuth2ClientRepository clientRepository;
+  private final OAuth2ClientProperties clientProperties;
 
   @Override
   public void save(RegisteredClient registeredClient) {
@@ -66,6 +69,9 @@ public class OAuth2RegisteredClientRepository implements RegisteredClientReposit
       builder.scope("read").scope("write");
     }
 
+    // 클라이언트별 토큰 TTL 설정 가져오기
+    var tokenSettings = getTokenSettings(client);
+
     return builder
         .clientSettings(
             ClientSettings.builder()
@@ -74,12 +80,26 @@ public class OAuth2RegisteredClientRepository implements RegisteredClientReposit
                 // This allows registered confidential clients to work without PKCE
                 .requireProofKey(false)
                 .build())
-        .tokenSettings(
-            TokenSettings.builder()
-                .accessTokenTimeToLive(Duration.ofHours(24)) // 24 hours
-                .refreshTokenTimeToLive(Duration.ofDays(7)) // 7 days
-                .reuseRefreshTokens(false) // Refresh Token Rotation (RTR) enabled
-                .build())
+        .tokenSettings(tokenSettings)
+        .build();
+  }
+
+  private TokenSettings getTokenSettings(OAuth2Client client) {
+    // 클라이언트가 커스텀 TTL을 가지고 있으면 우선 사용, 없으면 기본 설정 사용
+    Duration accessTokenTtl =
+        client.getCustomAccessTokenTtlSeconds() != null
+            ? Duration.ofSeconds(client.getCustomAccessTokenTtlSeconds())
+            : clientProperties.getDefaultTokenSettings().getAccessTokenTtl();
+
+    Duration refreshTokenTtl =
+        client.getCustomRefreshTokenTtlSeconds() != null
+            ? Duration.ofSeconds(client.getCustomRefreshTokenTtlSeconds())
+            : clientProperties.getDefaultTokenSettings().getRefreshTokenTtl();
+
+    return TokenSettings.builder()
+        .accessTokenTimeToLive(accessTokenTtl)
+        .refreshTokenTimeToLive(refreshTokenTtl)
+        .reuseRefreshTokens(false) // Refresh Token Rotation (RTR) enabled
         .build();
   }
 }

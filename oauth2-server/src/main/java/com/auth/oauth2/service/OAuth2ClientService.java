@@ -33,6 +33,8 @@ public class OAuth2ClientService {
             .scopes(request.getScopes())
             .grantTypes(request.getGrantTypes())
             .enabled(true)
+            .customAccessTokenTtlSeconds(request.getCustomAccessTokenTtlSeconds())
+            .customRefreshTokenTtlSeconds(request.getCustomRefreshTokenTtlSeconds())
             .build();
 
     client = clientRepository.save(client);
@@ -70,6 +72,8 @@ public class OAuth2ClientService {
         .scopes(client.getScopes())
         .grantTypes(client.getGrantTypes())
         .enabled(client.getEnabled())
+        .customAccessTokenTtlSeconds(client.getCustomAccessTokenTtlSeconds())
+        .customRefreshTokenTtlSeconds(client.getCustomRefreshTokenTtlSeconds())
         .createdAt(client.getCreatedAt())
         .updatedAt(client.getUpdatedAt())
         .build();

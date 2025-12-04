@@ -1,5 +1,6 @@
 package com.auth.oauth2.domain.dto.request;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
@@ -28,4 +29,18 @@ public class OAuth2ClientRequest {
 
   @NotEmpty(message = "At least one grant type is required")
   private List<String> grantTypes;
+
+  /**
+   * 커스텀 액세스 토큰 TTL (초 단위)
+   * null이면 기본 설정 사용
+   */
+  @Min(value = 1, message = "Access token TTL must be at least 1 second")
+  private Long customAccessTokenTtlSeconds;
+
+  /**
+   * 커스텀 리프레시 토큰 TTL (초 단위)
+   * null이면 기본 설정 사용
+   */
+  @Min(value = 1, message = "Refresh token TTL must be at least 1 second")
+  private Long customRefreshTokenTtlSeconds;
 }
